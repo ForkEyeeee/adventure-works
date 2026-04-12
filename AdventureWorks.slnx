@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="adventureworks.client/adventureworks.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="AdventureWorks.Server/AdventureWorks.Server.csproj" />
+</Solution>
