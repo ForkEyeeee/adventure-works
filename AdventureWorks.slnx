@@ -4,4 +4,5 @@
     <Deploy />
   </Project>
   <Project Path="AdventureWorks.Server/AdventureWorks.Server.csproj" />
+  <Project Path="AdventureWorksFunction/AdventureWorksFunction.csproj" Id="c81cc648-e496-424f-9e61-3cb15f5a2434" />
 </Solution>
