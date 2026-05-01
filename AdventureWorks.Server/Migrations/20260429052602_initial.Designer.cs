@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AdventureWorks.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260411224742_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260429052602_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,9 +21,9 @@ namespace AdventureWorks.Server.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "9.0.14")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("AdventureWorks.Server.Core.BusinessEntity", b =>
                 {
@@ -31,20 +31,20 @@ namespace AdventureWorks.Server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("BusinessEntityID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessEntityID"));
 
                     b.Property<DateTime>("ModifiedDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
+                        .HasColumnType("datetime2")
                         .HasDefaultValue(new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
 
                     b.Property<Guid>("rowguid")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("BusinessEntityID");
 
-                    b.ToTable("BusinessEntity", (string)null);
+                    b.ToTable("BusinessEntity", "Person");
                 });
 #pragma warning restore 612, 618
         }

@@ -31,6 +31,21 @@ namespace AdventureWorks.Server.Controllers
             .ToArray();
         }
 
+        [HttpGet("businessentity")]
+        public IActionResult GetBusinessEntities()
+        {
+            try
+            {
+                var entities = _context.Person.ToList();
+                return Ok(entities);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPost("businessentity")]
         public IActionResult AddBusinessEntity(BusinessEntity entity, IConfiguration config)
         {
@@ -46,7 +61,27 @@ namespace AdventureWorks.Server.Controllers
                 return BadRequest(ex.Message);
             }
         }
-    }
 
-    
+        [HttpDelete("businessentity/{id}")]
+        public IActionResult DeleteBusinessEntity(int id)
+        {
+            try
+            {
+                var entity = _context.Person.FirstOrDefault(e => e.BusinessEntityID == id);
+                if (entity == null)
+                {
+                    return NotFound();
+                }
+
+                _context.Person.Remove(entity);
+                _context.SaveChanges();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return BadRequest(ex.Message);
+            }
+        }
+    }
 }

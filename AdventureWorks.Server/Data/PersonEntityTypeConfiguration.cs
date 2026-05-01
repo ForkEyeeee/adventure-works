@@ -9,7 +9,7 @@ public class PersonEntityTypeConfiguration : IEntityTypeConfiguration<BusinessEn
 {
     public void Configure(EntityTypeBuilder<BusinessEntity> builder)
     {
-        builder.ToTable("BusinessEntity");
+        builder.ToTable("BusinessEntity", "Person");
 
         builder.HasKey(b => b.BusinessEntityID);
 
