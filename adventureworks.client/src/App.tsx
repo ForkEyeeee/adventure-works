@@ -14,6 +14,17 @@ interface BusinessEntity {
     modifiedDate: string;
 }
 
+interface AuthMeResponse {
+    authenticated: boolean;
+    name?: string | null;
+    claims?: {
+        type: string;
+        value: string;
+    }[];
+}
+
+const backendBaseUrl = 'https://localhost:7249';
+
 function App() {
     const [forecasts, setForecasts] = useState<Forecast[]>();
     const [businessEntities, setBusinessEntities] = useState<BusinessEntity[]>([]);
@@ -22,15 +33,33 @@ function App() {
         modifiedDate: ''
     });
     const [loading, setLoading] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userName, setUserName] = useState<string | null>(null);
 
     useEffect(() => {
         populateWeatherData();
         populateBusinessEntities();
+        checkAuth();
     }, []);
+
+    const handleLogin = () => {
+        window.location.assign(`${backendBaseUrl}/api/auth/login`);
+    };
+
+    const handleLogout = async () => {
+        await fetch(`${backendBaseUrl}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        setIsLoggedIn(false);
+        setUserName(null);
+    };
 
     const handleAddEntity = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+
         try {
             const response = await fetch('weatherforecast/businessentity', {
                 method: 'POST',
@@ -42,11 +71,13 @@ function App() {
                     modifiedDate: newEntity.modifiedDate || new Date().toISOString()
                 })
             });
+
             if (response.ok) {
                 setNewEntity({
                     rowguid: '',
                     modifiedDate: ''
                 });
+
                 populateBusinessEntities();
             } else {
                 alert('Failed to add business entity');
@@ -63,11 +94,14 @@ function App() {
         if (!window.confirm('Are you sure you want to delete this entity?')) {
             return;
         }
+
         setLoading(true);
+
         try {
             const response = await fetch(`weatherforecast/businessentity/${id}`, {
                 method: 'DELETE'
             });
+
             if (response.ok) {
                 populateBusinessEntities();
             } else {
@@ -82,30 +116,68 @@ function App() {
     };
 
     const weatherContents = forecasts === undefined
-        ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
+        ? (
+            <p>
+                <em>
+                    Loading... Please refresh once the ASP.NET backend has started. See{' '}
+                    <a href="https://aka.ms/jspsintegrationreact">
+                        https://aka.ms/jspsintegrationreact
+                    </a>{' '}
+                    for more details.
+                </em>
+            </p>
+        )
+        : (
+            <table className="table table-striped" aria-labelledby="tableLabel">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Temp. (C)</th>
+                        <th>Temp. (F)</th>
+                        <th>Summary</th>
                     </tr>
-                )}
-            </tbody>
-        </table>;
+                </thead>
+                <tbody>
+                    {forecasts.map(forecast =>
+                        <tr key={forecast.date}>
+                            <td>{forecast.date}</td>
+                            <td>{forecast.temperatureC}</td>
+                            <td>{forecast.temperatureF}</td>
+                            <td>{forecast.summary}</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        );
 
     return (
         <div>
+            <div style={{ textAlign: 'right', padding: '10px', borderBottom: '1px solid #ccc' }}>
+                {isLoggedIn ? (
+                    <>
+                        <span style={{ marginRight: '10px' }}>
+                            Welcome{userName ? `, ${userName}` : ''}!
+                        </span>
+
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={handleLogout}
+                        >
+                            Logout
+                        </button>
+                    </>
+                ) : (
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={handleLogin}
+                    >
+                        Login
+                    </button>
+                )}
+            </div>
+
             <h1 id="tableLabel">Weather forecast</h1>
             <p>This component demonstrates fetching data from the server.</p>
             {weatherContents}
@@ -113,9 +185,10 @@ function App() {
             <hr />
 
             <h2>Business Entities Management</h2>
-            
+
             <div className="card" style={{ marginBottom: '20px', padding: '15px' }}>
                 <h3>Add New Business Entity</h3>
+
                 <form onSubmit={handleAddEntity}>
                     <div className="form-group">
                         <label htmlFor="rowguid">Row GUID (optional):</label>
@@ -128,8 +201,9 @@ function App() {
                             onChange={(e) => setNewEntity({ ...newEntity, rowguid: e.target.value })}
                         />
                     </div>
-                    <button 
-                        type="submit" 
+
+                    <button
+                        type="submit"
                         className="btn btn-primary"
                         disabled={loading}
                     >
@@ -139,6 +213,7 @@ function App() {
             </div>
 
             <h3>Business Entities List</h3>
+
             {businessEntities.length === 0 ? (
                 <p><em>No business entities found.</em></p>
             ) : (
@@ -159,6 +234,7 @@ function App() {
                                 <td>{new Date(entity.modifiedDate).toLocaleString()}</td>
                                 <td>
                                     <button
+                                        type="button"
                                         className="btn btn-danger btn-sm"
                                         onClick={() => handleDeleteEntity(entity.businessEntityID)}
                                         disabled={loading}
@@ -174,8 +250,34 @@ function App() {
         </div>
     );
 
+    async function checkAuth() {
+        try {
+            const response = await fetch(`${backendBaseUrl}/api/auth/me`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                setIsLoggedIn(false);
+                setUserName(null);
+                return;
+            }
+
+            const data: AuthMeResponse = await response.json();
+
+            setIsLoggedIn(data.authenticated);
+
+            const nameClaim = data.claims?.find(claim => claim.type === 'name');
+            setUserName(data.name ?? nameClaim?.value ?? null);
+        } catch (error) {
+            console.error('Error checking auth status:', error);
+            setIsLoggedIn(false);
+            setUserName(null);
+        }
+    }
+
     async function populateWeatherData() {
         const response = await fetch('weatherforecast');
+
         if (response.ok) {
             const data = await response.json();
             setForecasts(data);
@@ -185,6 +287,7 @@ function App() {
     async function populateBusinessEntities() {
         try {
             const response = await fetch('weatherforecast/businessentity');
+
             if (response.ok) {
                 const data = await response.json();
                 setBusinessEntities(data);

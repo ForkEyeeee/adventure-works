@@ -1,5 +1,6 @@
 using AdventureWorks.Server.Core;
 using AdventureWorks.Server.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AdventureWorks.Server.Controllers
@@ -14,6 +15,7 @@ namespace AdventureWorks.Server.Controllers
         {
             _context = context;
         }
+
         private static readonly string[] Summaries =
         [
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -22,6 +24,9 @@ namespace AdventureWorks.Server.Controllers
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
+            Console.WriteLine($"Authenticated: {User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"Name: {User.Identity?.Name}");
+
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
@@ -46,8 +51,9 @@ namespace AdventureWorks.Server.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("businessentity")]
-        public IActionResult AddBusinessEntity(BusinessEntity entity, IConfiguration config)
+        public IActionResult AddBusinessEntity(BusinessEntity entity)
         {
             try
             {
@@ -62,12 +68,14 @@ namespace AdventureWorks.Server.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("businessentity/{id}")]
         public IActionResult DeleteBusinessEntity(int id)
         {
             try
             {
                 var entity = _context.Person.FirstOrDefault(e => e.BusinessEntityID == id);
+
                 if (entity == null)
                 {
                     return NotFound();
@@ -75,6 +83,7 @@ namespace AdventureWorks.Server.Controllers
 
                 _context.Person.Remove(entity);
                 _context.SaveChanges();
+
                 return Ok();
             }
             catch (Exception ex)
